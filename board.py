@@ -1,50 +1,83 @@
+"""
+Contains Board class
+"""
+
 class Board:
     """
     Contains all information on board state
+    
+    Board format:
+    
 
-    ...
-
-    Attributes
-    -------
-    boardOne: int
-        Binary representation of playerOne's moves. Contains 1's where a move was played and 0's where no move from playerOne was played
-        First 3 bits: Top row
-        Second 3 bits: Middle row
-        Last 3 bits: Bottom row 
-
-
-    boardTwo: int
+    Returns:
+        _type_: _description_
     """
 
-    boardOne = 0b0
-    boardTwo = 0b0
-
+    default_board_str = [['-','-','-'],['-','-','-'],['-','-','-']]
+    
     def __init__(self):
-        pass
+        self.board_one = 0b0
+        self.board_two = 0b0
+        # TODO: make this better?
+        self.player_one_char = 'X'
+        self.player_two_char = 'O'
 
-    def __convertFromBitBoard(self) -> list[list[str]]:
+    def __convert_from_bitboard(self) -> list[list[str]]:
         """
-        Converts bit board to nested array to make printing easier
+        Converts bitboard to nested array to make printing easier
 
-        ...
-
-        Returns
-        -------
-        list: list[list[str]]
+        Returns:
+            list[list[str]]: Nested array representation of the board state
         """
-        numBits = 3
-        [print(i) for i in range(numBits - 1, -1, -1)]
-        rowOneBits = [bin((self.boardOne >> bit) & 1) for bit in range(numBits - 1, -1, -1)]
-        print(rowOneBits)
-
+        
+        out = self.default_board_str
+        print(bin(self.board_one), bin(self.board_two))
+        for i, row in enumerate(out):
+            #? num_bits = 3
+            #TODO: Understand and hopefully reverse order
+            #player_one_bits = [] 
+            #[print(d) for d in bin(self.board_one)[(i-2):(i+3)]]
+            num_bits = 8
+            player_one_bits = [(self.board_one >> bit) & 1 for bit in range(num_bits - (3*i), num_bits - 3 - (3*i), -1)]
+            player_two_bits = [(self.board_two >> bit) & 1 for bit in range(num_bits - (3*i), num_bits - 3 - (3*i), -1)]
+            
+            
+            #[print(i) for i in range(num_bits - (3*i), num_bits - 3 - (3*i), -1)]
+            print(player_one_bits)
+            #print(player_two_bits)
+            # Adds player one char to row one where moves have been made
+            
+            for j, bit in enumerate(player_one_bits):
+                if bit:
+                    char = self.player_one_char
+                    out[i][j] = char
+            
+            # Adds player two char to row one where moves have been made
+            for j, bit in enumerate(player_two_bits):
+                if bit:
+                    char = self.player_two_char
+                    out[i][j] = char
+            
+        print(out)
+        print(bin(self.xor(self.board_one, self.board_two)))
+        
         #boardList = [
         #    [str(RowOne)],
         #    [''],
         #    ['']
         #]
         return [['']]
+    def xor(self, a, b):
+        return (a and not b) or (not a and b)
 
-    def printBoard(self):
+    def print_board(self):
         #Board parsing from bitboard
-        self.__convertFromBitBoard()
+        self.__convert_from_bitboard()
         pass
+    
+#! Temporary test code
+board = Board()
+board.board_one = 0b111001101
+board.board_two = 0b000010010
+
+board.print_board()
