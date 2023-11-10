@@ -1,9 +1,9 @@
 #https://numpydoc.readthedocs.io/en/latest/format.html#documenting-classes
 #https://google.github.io/styleguide/pyguide.html
 
-
-import board
-import player
+# TODO: Do better directory stuff
+from board import Board
+from player import Player
 
 player_one = None
 player_two = None
@@ -24,12 +24,27 @@ if __name__ == '__main__':
         else:
             player_two_computer = bool(user_input)
             break
-
-    board = board.Board()
+    # TODO: Implement computers
+    player_one = Player(player_one_char, 0)
+    player_two = Player(player_two_char, 1)
+    players = [player_one, player_two]
+    board = Board(player_one, player_two)
+    
+    game = True
+    turn_player = 0
+    #! Temp disable
+    while False:
+        board.print_board()
+        move = board.parse_input(input('Select your square'))
+        board.move(players[turn_player], move)
+        turn_player = not turn_player
+    board.print_board()
+    move = board.parse_input('a1')
+        
     
     #? Allow player 1 to be computer?
     #Sets up player 1 as a normal player, defaults to X as it's char
-    PlayerOne = player.Player(player_one_char)
+
 
     # Sets up player 2 as either a computer or normal player
     '''
@@ -38,9 +53,3 @@ if __name__ == '__main__':
     else:
         playerTwo = player.Player(playerTwoChar)
     '''
-    
-    # Example board for print testing:
-    board.board_one = 0b001001101
-    board.board_two = 0b100010010
-
-    board.print_board()
