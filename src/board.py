@@ -17,27 +17,47 @@ class Board:
     """
 
     DEFAULT_BOARD_STR = [['a1','a2','a3'],['b1','b2','b3'],['c1','c2','c3']]
+    DEFAULT_BOARD_BITS = 0b000000000
     ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
+    BOARD_ROWS = 3
+    BOARD_COLUMNS = 3
 
     def __init__(self, player_one: Player, player_two: Player):
-        self.board_one = 0b000000000
-        self.board_two = 0b000000000
+        self.reset_board()
         #self.board = [self.board_one, self.board_two]
         
         self.player_one = player_one
         self.player_two = player_two
+        self.players = [player_one, player_two]
 
     # Public Methods
 
     def parse_input(self, move: str) -> bytes:
-        # TODO: check for bad inputs
-        move_list = list(move)
-        print(move_list)
-        
-        print(self.ALPHABET.index(move_list[0]))
-    
-    def move(self, player: Player , move:bytes) -> bytes:
+        """
+        Parses user input (EX: 'a1') and converts it to a binary representation.
 
+        Args:
+            move (str): Move input by player.
+
+        Returns:
+            bytes: Binary representation of move (0b001000000)
+        """
+        # TODO: check for bad inputs
+        move_list = [0,int(move[1])]
+        move_list[0] = self.ALPHABET.index(list(move)[0])
+        
+        # Shifts a one to the proper column position
+        # abs() so that we don't get a negative shift
+        column = 1 << abs(move_list[1] - 3)
+        # Shifts the one to the proper row position
+        out = column << abs((3*(move_list[0]-2)))
+        
+        return out
+    
+    def move(self, player: Player , move:bytes):
+
+        # TODO: Better status codes?
+        
         if self.is_move_valid(move, player):
             # TODO: Better way to select board?
             if player.player_num == 0:
@@ -49,7 +69,6 @@ class Board:
                 return self.board_two
             
         else:
-            print('Invalid move.')
             return -1
             
     
@@ -75,6 +94,63 @@ class Board:
         
         return valid
     
+    def check_for_win(self) -> Player:
+        test = 0b0
+        row_condition = 0b111
+        col_condition = 0b100100100
+        diag_condition_lr = 0b100010001
+        diag_condition_rl = 0b001010100
+        
+        # Checking row win conditions
+        for row in range(self.BOARD_ROWS):
+            test = row_condition & (self.board_one >> (self.BOARD_ROWS * row))
+            if test == row_condition:
+                print(f'Row {row + 1} win')
+                return self.player_one
+
+        # Checking column win conditions
+        for col in range(self.BOARD_COLUMNS):
+            condition = col_condition >> col
+            test = self.board_one & condition
+            if test == condition:
+                print(f'Column {col + 1} win')
+                return self.player_one
+        
+        # Checking for diagonal win conditions
+        if (self.board_one & diag_condition_lr) == diag_condition_lr:
+            print('Diagonal win, top left to bottom right')
+            return self.player_one
+        elif (self.board_one & diag_condition_rl) == diag_condition_rl:
+            print('Diagonal win, top right to bottom left')
+            return self.player_one
+        
+        # TODO: Literally any better way to check both players
+        
+        # Checking row win conditions
+        for row in range(self.BOARD_ROWS):
+            test = row_condition & (self.board_two >> (self.BOARD_ROWS * row))
+            if test == row_condition:
+                print(f'Row {row + 1} win')
+                return self.player_two
+
+        # Checking column win conditions
+        for col in range(self.BOARD_COLUMNS):
+            condition = col_condition >> col
+            test = self.board_two & condition
+            if test == condition:
+                print(f'Column {col + 1} win')
+                return self.player_two
+        
+        # Checking for diagonal win conditions
+        if (self.board_two & diag_condition_lr) == diag_condition_lr:
+            print('Diagonal win, top left to bottom right')
+            return self.player_two
+        elif (self.board_two & diag_condition_rl) == diag_condition_rl:
+            print('Diagonal win, top right to bottom left')
+            return self.player_two
+        
+        return -1
+    
     def print_board(self):
         """
         Prints current board state in a human readable format.
@@ -91,8 +167,8 @@ class Board:
                 print('-------------------')
     
     def reset_board(self):
-        self.board_one = 0b000000000
-        self.board_two = 0b000000000
+        self.board_one = self.DEFAULT_BOARD_BITS
+        self.board_two = self.DEFAULT_BOARD_BITS
     
     # Private Methods
     
@@ -129,8 +205,7 @@ class Board:
 
     def __get_binary_array(self, binary = 0x1FF, num_bits = 8, row_length = 3):
         # TODO: Abstract bits to array section of __convert_from_bitboard?
-        print('ERROR: __get_binary_array() is not implemented!')
-        raise NotImplementedError
+        raise NotImplementedError('__get_binary_array() is not implemented!')
 
         i = 0
         loop_range = range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)
@@ -142,6 +217,9 @@ if __name__ == '__main__':
     player_one_test = Player('X', 0)
     player_two_test = Player('O', 1)
     board_test = Board(player_one_test, player_two_test)
-    board_test.parse_input('a1')
-
+    #board_test.board_one = 0b110110001
+    board_test.move(player_one_test, board_test.parse_input('a2'))
+    board_test.move(player_one_test, board_test.parse_input('b2'))
+    board_test.move(player_one_test, board_test.parse_input('c2'))
+    print(board_test.check_for_win())
     board_test.print_board()
