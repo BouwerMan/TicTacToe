@@ -4,6 +4,7 @@
 # TODO: Do better directory stuff
 from board import Board
 from player import Player
+from computer import Computer
 
 player_one = None
 player_two = None
@@ -27,33 +28,32 @@ if __name__ == '__main__':
             break
     # TODO: Implement computers
     player_one = Player(player_one_char, 0)
-    player_two = Player(player_two_char, 1)
+    #player_two = Player(player_two_char, 1)
+    player_two = Computer(player_two_char, 1, 0)
     players = [player_one, player_two]
     board = Board(player_one, player_two)
+    #!TEMP
+    player_two.board = board
     
-    game = True
     turn_player = 0
-    while game:
+    while True:
         board.print_board()
-        move_raw = input(f'{players[turn_player]}Select your square: ')
-        if move_raw in exit_options:
+        win_player = board.check_for_win()
+        if win_player:
+            print(f'{win_player} Won!')
             break
-        move_parsed = board.parse_input(move_raw)
-        board_status = board.move(players[turn_player], move_parsed)
+        if isinstance(players[turn_player], Computer):
+            move = players[turn_player].create_move()
+            # TODO: Reverse parse?
+            print(f'Computer move is {move:#011b}')
+        else:
+            move_raw = input(f'{players[turn_player]} Select your square: ')
+            if move_raw in exit_options:
+                break
+            move = board.parse_input(move_raw)
+            
+        board_status = board.move(players[turn_player], move)
         if board_status == -1:
             print("Invalid move. Please select an empty square.")
             continue
-        turn_player = not turn_player
-        
-    
-    #? Allow player 1 to be computer?
-    #Sets up player 1 as a normal player, defaults to X as it's char
-
-
-    # Sets up player 2 as either a computer or normal player
-    '''
-    if playerTwoComputer:
-        playerTwo = player.Player(playerTwoChar, playerTwoComputer)
-    else:
-        playerTwo = player.Player(playerTwoChar)
-    '''
+        turn_player = ~turn_player

@@ -43,6 +43,7 @@ class Board:
             bytes: Binary representation of move (0b001000000)
         """
         # TODO: check for bad inputs
+        #! breaks if string is wrong length or if both are letters
         move_list = [0,int(move[1])]
         move_list[0] = self.ALPHABET.index(list(move)[0])
         
@@ -94,7 +95,7 @@ class Board:
         
         return valid
     
-    def check_for_win(self) -> Player:
+    def check_for_win(self, player = None) -> Player | None:
         test = 0b0
         row_condition = 0b111
         col_condition = 0b100100100
@@ -149,13 +150,14 @@ class Board:
             print('Diagonal win, top right to bottom left')
             return self.player_two
         
-        return -1
+        return None
     
     def print_board(self):
         """
         Prints current board state in a human readable format.
         Assumes that the board is 3x3.
         """
+        ## TODO: Convert to __str__?
         #? Make it not assume 3x3?
         board = self.__convert_from_bitboard()
 
