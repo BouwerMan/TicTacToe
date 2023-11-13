@@ -28,7 +28,9 @@ class Board:
         
         self.player_one = player_one
         self.player_two = player_two
+        #? IDK bout this thing
         self.players = [player_one, player_two]
+        self.boards = self.board_one | self.board_two
 
     # Public Methods
 
@@ -63,10 +65,12 @@ class Board:
             # TODO: Better way to select board?
             if player.player_num == 0:
                 self.board_one = self.board_one + move
+                self.update_board()
                 return self.board_one
             
             elif player.player_num == 1:
                 self.board_two = self.board_two + move
+                self.update_board()
                 return self.board_two
             
         else:
@@ -86,6 +90,7 @@ class Board:
         """
         
         # TODO: Need more checks?
+        # TODO: Swap to using self.boards
         #? Something with the player?
         
         valid = False
@@ -95,16 +100,22 @@ class Board:
         
         return valid
     
-    def check_for_win(self, player = None) -> Player | None:
+    def check_for_win(self, board_one = -1, board_two = -1) -> Player | None:
         test = 0b0
         row_condition = 0b111
         col_condition = 0b100100100
         diag_condition_lr = 0b100010001
         diag_condition_rl = 0b001010100
         
+        # Sets default boards to current game state
+        if board_one == -1:
+            board_one = self.board_one
+        if board_two == -1:
+            board_two = self.board_two
+        
         # Checking row win conditions
         for row in range(self.BOARD_ROWS):
-            test = row_condition & (self.board_one >> (self.BOARD_ROWS * row))
+            test = row_condition & (board_one >> (self.BOARD_ROWS * row))
             if test == row_condition:
                 print(f'Row {row + 1} win')
                 return self.player_one
@@ -112,16 +123,16 @@ class Board:
         # Checking column win conditions
         for col in range(self.BOARD_COLUMNS):
             condition = col_condition >> col
-            test = self.board_one & condition
+            test = board_one & condition
             if test == condition:
                 print(f'Column {col + 1} win')
                 return self.player_one
         
         # Checking for diagonal win conditions
-        if (self.board_one & diag_condition_lr) == diag_condition_lr:
+        if (board_one & diag_condition_lr) == diag_condition_lr:
             print('Diagonal win, top left to bottom right')
             return self.player_one
-        elif (self.board_one & diag_condition_rl) == diag_condition_rl:
+        elif (board_one & diag_condition_rl) == diag_condition_rl:
             print('Diagonal win, top right to bottom left')
             return self.player_one
         
@@ -168,6 +179,10 @@ class Board:
             if i < 2:
                 print('-------------------')
     
+    def update_board(self):
+        self.boards = self.board_one | self.board_two
+        return self.boards
+    
     def reset_board(self):
         self.board_one = self.DEFAULT_BOARD_BITS
         self.board_two = self.DEFAULT_BOARD_BITS
@@ -188,7 +203,7 @@ class Board:
             num_bits = 8
             row_length = 3
             # TODO: Abstract bits to array?
-            # Returns an binary array of each player's move on row i.
+            # Returns an binary array of each player's moves on row i.
             player_one_bits = [(self.board_one >> bit) & 1 for bit in range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)]
             player_two_bits = [(self.board_two >> bit) & 1 for bit in range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)]
 
