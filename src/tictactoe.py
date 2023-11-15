@@ -1,8 +1,16 @@
 #https://numpydoc.readthedocs.io/en/latest/format.html#documenting-classes
 #https://google.github.io/styleguide/pyguide.html
 
+###############
+# MASTER TODO #
+###############
+# TODO: Switch to one number for gamestate (both boards, winning player, active player, etc)
+# TODO: Document classes and modules
+# TODO: consolidate how we access and change data in regards to the game state
+
+
 # TODO: Do better directory stuff
-from board import Board
+from game import Game
 from player import Player
 from computer import Computer
 
@@ -12,6 +20,7 @@ player_two_computer = False
 player_one_char = 'X'
 player_two_char = 'O'
 exit_options = ['Quit', 'quit', 'q', 'Q', 'exit']
+computer_level = 7
 
 
 if __name__ == '__main__':
@@ -29,24 +38,32 @@ if __name__ == '__main__':
     # TODO: Implement computers
     player_one = Player(player_one_char, 0)
     #player_two = Player(player_two_char, 1)
-    player_two = Computer(player_two_char, 1, 0)
+    player_two = Computer(player_two_char, 1, computer_level)
     players = [player_one, player_two]
-    board = Board(player_one, player_two)
+    board = Game(player_one, player_two)
     #!TEMP
-    player_two.board = board
+    player_two.game = board
     
     turn_player = 0
     while True:
-        board.print_board()
+        
+        # Checks for win condition and handles result
         win_player = board.check_for_win()
-        if win_player:
-            print(f'{win_player} Won!')
+        if win_player == 0:
+            print('Player 1 Won!')
+        elif win_player == 1:
+            print('Player 2 Won!')
             break
+        elif (board.board_one | board.board_two) == 0x1FF:
+            print("Tie!")
+            break
+        
         if isinstance(players[turn_player], Computer):
             move = players[turn_player].create_move()
             # TODO: Reverse parse?
-            print(f'Computer move is {move:#011b}')
+            print(f'Computer move is {move:#011b}:')
         else:
+            board.print_board()
             move_raw = input(f'{players[turn_player]} Select your square: ')
             if move_raw in exit_options:
                 break

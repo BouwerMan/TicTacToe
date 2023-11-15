@@ -1,12 +1,13 @@
 """
-Contains Board class
+Contains Game class
 """
+from timeit import default_timer as timer
 
 # My modules
 from player import Player
 
 
-class Board:
+class Game:
     """
     Contains all information on board state
 
@@ -30,6 +31,9 @@ class Board:
         self.player_two = player_two
         #? IDK bout this thing
         self.players = [player_one, player_two]
+        self.board = [self.board_one, self.board_two]
+        
+        # TODO: This guy needed?
         self.boards = self.board_one | self.board_two
 
     # Public Methods
@@ -100,69 +104,23 @@ class Board:
         
         return valid
     
-    def check_for_win(self, board_one = -1, board_two = -1) -> Player | None:
-        test = 0b0
-        row_condition = 0b111
-        col_condition = 0b100100100
-        diag_condition_lr = 0b100010001
-        diag_condition_rl = 0b001010100
-        
+    def check_for_win(self, board = None) -> Player | None:
+        # This version isnt much faster than old one, but is much cleaner
         # Sets default boards to current game state
-        if board_one == -1:
-            board_one = self.board_one
-        if board_two == -1:
-            board_two = self.board_two
+        if board is None:
+            board = [self.board[0], self.board[1]]
+            
+        test_conditions = [0b111, 0b111000, 0b111000000,
+                           0b100100100, 0b010010010, 0b001001001,
+                           0b100010001, 0b001010100]
         
-        # Checking row win conditions
-        for row in range(self.BOARD_ROWS):
-            test = row_condition & (board_one >> (self.BOARD_ROWS * row))
-            if test == row_condition:
-                print(f'Row {row + 1} win')
-                return self.player_one
-
-        # Checking column win conditions
-        for col in range(self.BOARD_COLUMNS):
-            condition = col_condition >> col
-            test = board_one & condition
-            if test == condition:
-                print(f'Column {col + 1} win')
-                return self.player_one
-        
-        # Checking for diagonal win conditions
-        if (board_one & diag_condition_lr) == diag_condition_lr:
-            print('Diagonal win, top left to bottom right')
-            return self.player_one
-        elif (board_one & diag_condition_rl) == diag_condition_rl:
-            print('Diagonal win, top right to bottom left')
-            return self.player_one
-        
-        # TODO: Literally any better way to check both players
-        
-        # Checking row win conditions
-        for row in range(self.BOARD_ROWS):
-            test = row_condition & (self.board_two >> (self.BOARD_ROWS * row))
-            if test == row_condition:
-                print(f'Row {row + 1} win')
-                return self.player_two
-
-        # Checking column win conditions
-        for col in range(self.BOARD_COLUMNS):
-            condition = col_condition >> col
-            test = self.board_two & condition
-            if test == condition:
-                print(f'Column {col + 1} win')
-                return self.player_two
-        
-        # Checking for diagonal win conditions
-        if (self.board_two & diag_condition_lr) == diag_condition_lr:
-            print('Diagonal win, top left to bottom right')
-            return self.player_two
-        elif (self.board_two & diag_condition_rl) == diag_condition_rl:
-            print('Diagonal win, top right to bottom left')
-            return self.player_two
+        for i in range(len(board)):
+            for j in range(len(test_conditions)):
+                if (board[i] & test_conditions[j]) == test_conditions[j]:
+                    return i
         
         return None
-    
+        
     def print_board(self):
         """
         Prints current board state in a human readable format.
@@ -180,6 +138,7 @@ class Board:
                 print('-------------------')
     
     def update_board(self):
+        self.board = [self.board_one, self.board_two]
         self.boards = self.board_one | self.board_two
         return self.boards
     
@@ -233,7 +192,7 @@ if __name__ == '__main__':
     #! Temporary test code
     player_one_test = Player('X', 0)
     player_two_test = Player('O', 1)
-    board_test = Board(player_one_test, player_two_test)
+    board_test = Game(player_one_test, player_two_test)
     #board_test.board_one = 0b110110001
     board_test.move(player_one_test, board_test.parse_input('a2'))
     board_test.move(player_one_test, board_test.parse_input('b2'))
