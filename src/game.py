@@ -27,27 +27,52 @@ class Game:
         self.reset_board()
         #self.board = [self.board_one, self.board_two]
         
-        self.player_one = player_one
-        self.player_two = player_two
+        self.player_one_old = player_one
+        self.player_two_old = player_two
         #? IDK bout this thing
         self.players = [player_one, player_two]
         self.board = [self.board_one, self.board_two]
         
         # TODO: This guy needed?
         self.boards = self.board_one | self.board_two
+        
+        #! New 32-bit implementation of bitboards below:
+        
+        # Default board state, bit details under mask section
+        # Bit 17 just separates board_one and board_two, always 1
+        self.board_state = 0b10000000000000001000000000000000
 
+        # Masks for state manipulation
+        # 1st bit is game state, 1=no winner, 0=winner/tie
+        self.game_state =       0b10000000000000000000000000000000
+        # 2nd and 3rd bit is who won, 10 = player 1, 01 = player two, 00 = tie
+        self.player_one =       0b01000000000000000000000000000000
+        self.player_two =       0b00100000000000000000000000000000
+        # Bits 24-32 represent board one (X), first 3 bits of that number is the top row
+        #                                    second 3 bits is the middle row
+        #                                    last 3 bits is the bottom row
+        self.board_one_mask =   0b00000000000000000000000111111111
+        # Bits 8-16 represent board two (O), bit order same as board one
+        self.board_two_mask =   0b00000001111111110000000000000000
+        
+        
+        # Bit length of each board (even though only 9 are used)
+        self.board_bitlen = 16
+        
     # Public Methods
 
-    def parse_input(self, move: str) -> bytes:
+    def parse_input(self, move: str, player_num : int = 0) -> bytes:
         """
         Parses user input (EX: 'a1') and converts it to a binary representation.
 
         Args:
             move (str): Move input by player.
+            player_num (int): Player number, 0 = player one, 1 = player two
 
         Returns:
             bytes: Binary representation of move (0b001000000)
         """
+        # TODO: redo parse input to return a move in the correct board in the boardstate
         # TODO: check for bad inputs
         #! breaks if string is wrong length or if both are letters
         move_list = [0,int(move[1])]
@@ -59,48 +84,56 @@ class Game:
         # Shifts the one to the proper row position
         out = column << abs((3*(move_list[0]-2)))
         
-        return out
+        # Shifts out to the correct board
+        return (out << (self.board_bitlen * player_num))
     
-    def move(self, player: Player , move:bytes):
-
+    def move(self, move: bytes) -> int:
         # TODO: Better status codes?
-        
-        if self.is_move_valid(move, player):
-            # TODO: Better way to select board?
-            if player.player_num == 0:
-                self.board_one = self.board_one + move
-                self.update_board()
-                return self.board_one
-            
-            elif player.player_num == 1:
-                self.board_two = self.board_two + move
-                self.update_board()
-                return self.board_two
-            
-        else:
+        # Returns -1 if move is not valid.
+        if not self.is_move_valid(move):
             return -1
+        
+        # Checks if the move is 
+        
+        
+        
+        # Player 0 is player_one or the X player, therefore the relevant bits are 8-16
+        #if player.player_num == 0:
+        #    # TODO: redo parse input to return a move in the correct board in the boardstate
+        #    board = self.board_state & self.board_one_mask
+        #    board += move
+        #    self.board_state &= (board << self.board_bitlen)
+        #    return 0
+        
+        #elif player.player_num == 1:
+        #    self.board_two = self.board_two + move
+        #    self.update_board()
+        #    return 1
             
     
-    def is_move_valid(self, move = 0x1FF, player = -1) -> bool:
+    def is_move_valid(self, move: bytes = 0b0) -> bool:
         """
         Checks if move is valid for current board state.
 
         Args:
-            move (binary): Move made. Defaults to 0x1FF.
-            player (Player, optional): Player making the move. Defaults to -1. NEEDED?
+            move (bytes): Move made. Defaults to 0b0.
 
         Returns:
             bool: If move is valid or not.
         """
-        
         # TODO: Need more checks?
-        # TODO: Swap to using self.boards
-        #? Something with the player?
-        
         valid = False
-        valid_one = not (move & self.board_one)
-        valid_two = not (move & self.board_two)
-        valid = valid_one & valid_two
+        
+        # Checks if the move is in either board
+        if 0 == (move & (self.board_one_mask | self.board_two_mask)):
+            return False
+        
+        # Have to shift board_one to the right to line up bits
+        board_one = (self.game_state & self.board_one_mask) >> self.board_bitlen
+        board_two = self.game_state & self.board_two_mask
+        boards = board_one | board_two
+        
+        valid = not (move & boards)
         
         return valid
     
@@ -148,6 +181,10 @@ class Game:
     
     # Private Methods
     
+    def __get_board(self, board_sel = 0,) -> bytes:
+        board_mask = self.board_one_mask << (self.board_bitlen * abs(board_sel - 1))
+        return self.board
+    
     def __convert_from_bitboard(self) -> list[list[str]]:
         """
         Converts bitboard to nested array to make printing easier
@@ -169,13 +206,13 @@ class Game:
             # Adds player one char to row one where moves have been made
             for j, bit in enumerate(player_one_bits):
                 if bit:
-                    char = self.player_one.player_char
+                    char = self.player_one_old.player_char
                     row[j] = char
 
             # Adds player two char to row one where moves have been made
             for j, bit in enumerate(player_two_bits):
                 if bit:
-                    char = self.player_two.player_char
+                    char = self.player_two_old.player_char
                     row[j] = char
         return out
 
@@ -193,9 +230,3 @@ if __name__ == '__main__':
     player_one_test = Player('X', 0)
     player_two_test = Player('O', 1)
     board_test = Game(player_one_test, player_two_test)
-    #board_test.board_one = 0b110110001
-    board_test.move(player_one_test, board_test.parse_input('a2'))
-    board_test.move(player_one_test, board_test.parse_input('b2'))
-    board_test.move(player_one_test, board_test.parse_input('c2'))
-    print(board_test.check_for_win())
-    board_test.print_board()
