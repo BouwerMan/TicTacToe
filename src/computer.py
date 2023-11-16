@@ -65,12 +65,13 @@ class Computer(Player):
         best_move = 0
         best_score = -1000
         board = copy.deepcopy(self.game.board)
+        moves = ~(board[0] | board[1])
         
         # Iterates through the possible moves and calls
         # __minimax() to find the score of said move
         for i in range(9):
             # If move is available on both boards
-            if (~(board[0] | board[1]) >> i) & 1:
+            if (moves >> i) & 1:
                 guess_move = 1 << i
 
                 # Makes the move on a copied board
@@ -88,6 +89,7 @@ class Computer(Player):
     def __minimax(self, board, depth: int, is_max: bool):
         self.total_searches += 1
         self.max_depth = max(depth, self.max_depth)
+        moves = ~(board[0] | board[1])
         
         # Limits depth for computer levels
         #! Had this return 10 for a bit, idk if that changes much
@@ -118,7 +120,7 @@ class Computer(Player):
             # __minimax() to find the score of said move
             for i in range(9):
                 # If move is available
-                if (~(board[0] | board[1]) >> i) & 1:
+                if (moves >> i) & 1:
                     guess_move = 1 << i
                     # Makes the move
                     board[1] += guess_move
@@ -135,7 +137,7 @@ class Computer(Player):
             # __minimax() to find the score of said move
             for i in range(9):
                 # If move is available
-                if (~(board[0] | board[1]) >> i) & 1:
+                if (moves >> i) & 1:
                     guess_move = 1 << i
                     # Makes the move
                     board[0] += guess_move
