@@ -72,7 +72,6 @@ class Game:
         Returns:
             bytes: Binary representation of move (0b001000000)
         """
-        # TODO: redo parse input to return a move in the correct board in the boardstate
         # TODO: check for bad inputs
         #! breaks if string is wrong length or if both are letters
         move_list = [0,int(move[1])]
@@ -93,23 +92,9 @@ class Game:
         if not self.is_move_valid(move):
             return -1
         
-        # Checks if the move is 
+        self.board_state += move
         
-        
-        
-        # Player 0 is player_one or the X player, therefore the relevant bits are 8-16
-        #if player.player_num == 0:
-        #    # TODO: redo parse input to return a move in the correct board in the boardstate
-        #    board = self.board_state & self.board_one_mask
-        #    board += move
-        #    self.board_state &= (board << self.board_bitlen)
-        #    return 0
-        
-        #elif player.player_num == 1:
-        #    self.board_two = self.board_two + move
-        #    self.update_board()
-        #    return 1
-            
+        return self.board_state
     
     def is_move_valid(self, move: bytes = 0b0) -> bool:
         """
@@ -230,3 +215,6 @@ if __name__ == '__main__':
     player_one_test = Player('X', 0)
     player_two_test = Player('O', 1)
     board_test = Game(player_one_test, player_two_test)
+    print(bin(board_test.board_state))
+    board_test.move(board_test.parse_input('a1', 1))
+    print(bin(board_test.board_state))
