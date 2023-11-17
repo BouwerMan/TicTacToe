@@ -22,6 +22,10 @@ class Game:
     ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
     BOARD_ROWS = 3
     BOARD_COLUMNS = 3
+    
+    WIN_CONDITIONS = [0b111, 0b111000, 0b111000000,
+                           0b100100100, 0b010010010, 0b001001001,
+                           0b100010001, 0b001010100]
 
     def __init__(self, player_one: Player, player_two: Player):
         self.reset_board()
@@ -40,14 +44,15 @@ class Game:
         
         # Default board state, bit details under mask section
         # Bit 17 just separates board_one and board_two, always 1
-        self.board_state = 0b10000000000000001000000000000000
+        self.board_state =      0b10000000000000001000000000000000
 
         # Masks for state manipulation
         # 1st bit is game state, 1=no winner, 0=winner/tie
         self.game_state =       0b10000000000000000000000000000000
-        # 2nd and 3rd bit is who won, 10 = player 1, 01 = player two, 00 = tie
-        self.player_one =       0b01000000000000000000000000000000
-        self.player_two =       0b00100000000000000000000000000000
+        # 2nd and 3rd bit is who the current player is, 01 = player 1, 10 = player two, 00 = tie/neither
+        self.player_one =       0b00100000000000000000000000000000
+        self.player_two =       0b01000000000000000000000000000000
+        self.player_mask =      0b01100000000000000000000000000000
         # Bits 24-32 represent board one (X), first 3 bits of that number is the top row
         #                                    second 3 bits is the middle row
         #                                    last 3 bits is the bottom row
@@ -55,9 +60,16 @@ class Game:
         # Bits 8-16 represent board two (O), bit order same as board one
         self.board_two_mask =   0b00000001111111110000000000000000
         
+        self.tie_mask =         0b00000001111111110000000111111111
+        
         
         # Bit length of each board (even though only 9 are used)
         self.board_bitlen = 16
+        
+        # Bit of players, used to shift to the player bits properly
+        self.player_bitlen = 29
+        
+        
         
     # Public Methods
 
@@ -84,7 +96,7 @@ class Game:
         out = column << abs((3*(move_list[0]-2)))
         
         # Shifts out to the correct board
-        return (out << (self.board_bitlen * player_num))
+        return out << (self.board_bitlen * player_num)
     
     def move(self, move: bytes) -> int:
         # TODO: Better status codes?
@@ -93,6 +105,10 @@ class Game:
             return -1
         
         self.board_state += move
+        
+        # Checks for win and sets game_state accordingply
+        if self.check_for_win():
+            pass
         
         return self.board_state
     
@@ -123,20 +139,25 @@ class Game:
         return valid
     
     def check_for_win(self, board = None) -> Player | None:
+        # Returns winning player
         # This version isnt much faster than old one, but is much cleaner
         # Sets default boards to current game state
         if board is None:
-            board = [self.board[0], self.board[1]]
-            
-        test_conditions = [0b111, 0b111000, 0b111000000,
-                           0b100100100, 0b010010010, 0b001001001,
-                           0b100010001, 0b001010100]
+            board = self.board_state
         
-        for i in range(len(board)):
-            for j in range(len(test_conditions)):
-                if (board[i] & test_conditions[j]) == test_conditions[j]:
-                    return i
+        #! Gets only the board bits, not sure if needed since win conditions should fall within bounds
+        # board &= self.board_one_mask | self.board_two_mask
+        if (board & self.tie_mask) == self.tie_mask:
+            return None
         
+        # Iterates from board 1 to board 2
+        for i in range(2):
+            for win in range(len(self.WIN_CONDITIONS)):
+                # Shifts the win condition to allow &ing with the correct board
+                win_cond = self.WIN_CONDITIONS[win] << (self.board_bitlen * i)
+                if (board & win_cond) == win_cond:
+                    return self.players[i]
+                
         return None
         
     def print_board(self):
@@ -166,10 +187,6 @@ class Game:
     
     # Private Methods
     
-    def __get_board(self, board_sel = 0,) -> bytes:
-        board_mask = self.board_one_mask << (self.board_bitlen * abs(board_sel - 1))
-        return self.board
-    
     def __convert_from_bitboard(self) -> list[list[str]]:
         """
         Converts bitboard to nested array to make printing easier
@@ -179,42 +196,45 @@ class Game:
         """
 
         out = self.DEFAULT_BOARD_STR
+        
+        # Gets each board
+        board_one = self.board_state & self.board_one_mask
+        board_two = (self.board_state & self.board_two_mask) >> self.board_bitlen
 
         for i, row in enumerate(out):
             num_bits = 8
             row_length = 3
             # TODO: Abstract bits to array?
+            # TODO: I've bandaid fixed for new board format, could fix.
             # Returns an binary array of each player's moves on row i.
-            player_one_bits = [(self.board_one >> bit) & 1 for bit in range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)]
-            player_two_bits = [(self.board_two >> bit) & 1 for bit in range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)]
-
+            player_one_bits = [(board_one >> bit) & 1 for bit in range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)]
+            player_two_bits = [(board_two >> bit) & 1 for bit in range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)]
+            
+            # TODO: Better player selection?
             # Adds player one char to row one where moves have been made
             for j, bit in enumerate(player_one_bits):
                 if bit:
-                    char = self.player_one_old.player_char
+                    char = self.players[0].player_char
                     row[j] = char
 
             # Adds player two char to row one where moves have been made
             for j, bit in enumerate(player_two_bits):
                 if bit:
-                    char = self.player_two_old.player_char
+                    char = self.players[1].player_char
                     row[j] = char
         return out
-
-    def __get_binary_array(self, binary = 0x1FF, num_bits = 8, row_length = 3):
-        # TODO: Abstract bits to array section of __convert_from_bitboard?
-        raise NotImplementedError('__get_binary_array() is not implemented!')
-
-        i = 0
-        loop_range = range(num_bits - (row_length*i), num_bits - row_length - (row_length*i), -1)
-        return -1
-
 
 if __name__ == '__main__':
     #! Temporary test code
     player_one_test = Player('X', 0)
     player_two_test = Player('O', 1)
     board_test = Game(player_one_test, player_two_test)
-    print(bin(board_test.board_state))
-    board_test.move(board_test.parse_input('a1', 1))
-    print(bin(board_test.board_state))
+    #print(bin(board_test.board_state))
+    #board_test.move(board_test.parse_input('a1', 1))
+    #print(bin(board_test.board_state))
+    
+    board_test.board_state = 0b11000000000000111000000001011100
+    print('player one board ' + bin(board_test.board_state & board_test.board_one_mask))
+    print('player two board ' + bin((board_test.board_state & board_test.board_two_mask) >> board_test.board_bitlen))
+    print(board_test.check_for_win(board_test.board_state))
+    board_test.print_board()

@@ -43,19 +43,21 @@ class Computer(Player):
         print(f'Reached a depth of: {self.max_depth}')
         print(f'Hit max depth? {self.hit_max_depth}')
         print(f'Total searches: {self.total_searches}')
-        print(f'Max eval time: {self.max_eval_time * 1000:.4f}ms\n')
+        print(f'Max eval time: {self.max_eval_time * 1000:.4f}ms')
+        print()
         self.eval_time = 0
         self.total_searches = 0
-        return move
+        
+        return move# << (self.game.board_bitlen * self.player_num)
     
     def evaluate(self, board):
         start = timer()
         winner = self.game.check_for_win(board)
         end = timer()
         self.max_eval_time = max(end-start, self.max_eval_time)
-        if winner == 1:
+        if winner is self:
             return 10
-        elif winner == 0:
+        elif winner is not None:
             return -10
         else:
             return 0
@@ -64,33 +66,32 @@ class Computer(Player):
         # TODO: Should probably clean this substantially
         best_move = 0
         best_score = -1000
-        board = copy.deepcopy(self.game.board)
-        moves = ~(board[0] | board[1])
+        board = copy.deepcopy(self.game.board_state)
+        moves = self.__get_available_moves(board)
         
         # Iterates through the possible moves and calls
         # __minimax() to find the score of said move
         for i in range(9):
             # If move is available on both boards
             if (moves >> i) & 1:
-                guess_move = 1 << i
+                guess_move = (1 << i) << self.game.board_bitlen
 
                 # Makes the move on a copied board
-                board[1] += guess_move
+                board += guess_move
                 score = self.__minimax(board, 0, False)
                 
                 # Undoes the move
-                board[1] -= guess_move
+                board -= guess_move
                 if score > best_score:
                     best_score = score
                     best_move = guess_move
-                    
+        
         return best_move
         
     def __minimax(self, board, depth: int, is_max: bool):
         self.total_searches += 1
         self.max_depth = max(depth, self.max_depth)
-        moves = ~(board[0] | board[1])
-        
+        moves = self.__get_available_moves(board)
         # Limits depth for computer levels
         #! Had this return 10 for a bit, idk if that changes much
         if depth > self.depth_limit:
@@ -109,7 +110,7 @@ class Computer(Player):
             return result
         
         # Checks if no moves are left, indicating a tie
-        if (board[0] | board[1]) == 0x1FF:
+        if moves == 0:
             return 0
 
         # If maximizer(computer)'s move
@@ -121,12 +122,12 @@ class Computer(Player):
             for i in range(9):
                 # If move is available
                 if (moves >> i) & 1:
-                    guess_move = 1 << i
+                    guess_move = (1 << i) << self.game.board_bitlen
                     # Makes the move
-                    board[1] += guess_move
+                    board += guess_move
                     score = self.__minimax(board, depth + 1, False)
                     # Undoes the move
-                    board[1] -= guess_move
+                    board -= guess_move
                     best_score = max(score, best_score)
                     
             return best_score
@@ -138,17 +139,20 @@ class Computer(Player):
             for i in range(9):
                 # If move is available
                 if (moves >> i) & 1:
-                    guess_move = 1 << i
+                    guess_move = (1 << i)
                     # Makes the move
-                    board[0] += guess_move
+                    board += guess_move
                     score = self.__minimax(board, depth + 1, True)
                     # Undoes the move
-                    board[0] -= guess_move
+                    board -= guess_move
                     best_score = min(score, best_score)
             return best_score
             
                 
-            
+    def __get_available_moves(self, board: bytes) -> bytes:
+        board_one = board & self.game.board_one_mask
+        board_two = (board & self.game.board_two_mask) >> self.game.board_bitlen
+        return (~(board_one | board_two)) & self.game.board_one_mask
     
     def __create_random_move(self):
         return 1 << random.randint(0, 8)
@@ -156,15 +160,17 @@ class Computer(Player):
 if __name__ == '__main__':
     #! Temporary test code
     player_one_test = Player('X', 0)
-    player_two_test = Computer('O', 1, 0)
+    player_two_test = Computer('O', 1, 7)
     board_test = Game(player_one_test, player_two_test)
     player_two_test.game = board_test
     board_test.board_one = 0b111010001
     board_test.board_two = 0b000100010
+    board_test.board_state += (0x0 << 16) | (0x1)
     #board_test.move(player_two_test, board_test.parse_input('a2'))
     #board_test.move(player_two_test, board_test.parse_input('b2'))
     #board_test.move(player_two_test, board_test.parse_input('c3'))
     board_test.print_board()
-    #ev = player_two_test.evaluate(board_test.board_one, board_test.board_two)
-    #print(ev)
-    player_two_test.find_best_move()
+    ev = player_two_test.evaluate(board_test.board_state)
+    print(ev)
+    test = player_two_test.create_move()
+    print(bin(test >> 16))

@@ -49,9 +49,10 @@ if __name__ == '__main__':
         
         # Checks for win condition and handles result
         win_player = board.check_for_win()
-        if win_player == 0:
+        if win_player == player_one:
             print('Player 1 Won!')
-        elif win_player == 1:
+            break
+        elif win_player == player_two:
             print('Player 2 Won!')
             break
         elif (board.board_one | board.board_two) == 0x1FF:
@@ -69,8 +70,9 @@ if __name__ == '__main__':
                 break
             move = board.parse_input(move_raw)
             
-        board_status = board.move(players[turn_player], move)
+        board_status = board.move(move)
         if board_status == -1:
             print("Invalid move. Please select an empty square.")
             continue
-        turn_player = ~turn_player
+        
+        turn_player ^= 1
