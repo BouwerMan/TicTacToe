@@ -2,5 +2,5 @@ player_one =       0b00100000000000000000000000000000
 player_two =       0b01000000000000000000000000000000
 board_state =      0b11000000010011001000000000111000
 player_mask =      0b01100000000000000000000000000000
-
-print(bin((board_state & player_mask) >> 29))
+game_state =       0b10000000000000000000000000000000
+print(bin((board_state & game_state) >> 30))

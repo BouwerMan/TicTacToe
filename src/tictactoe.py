@@ -19,41 +19,48 @@ player_two = None
 player_two_computer = False
 player_one_char = 'X'
 player_two_char = 'O'
-exit_options = ['Quit', 'quit', 'q', 'Q', 'exit']
+exit_options = ["Quit", "quit", 'q', 'Q', "exit"]
 computer_level = 7
+turn_player = 0
 
 
-if __name__ == '__main__':
-    user_input = 0 #!int(input("Player two computer? 0=false 1=true:\n"))
+if __name__ == "__main__":
 
-    correct_input = False
-
-    # Makes sure userInput is a viable number
-    while(correct_input is False):
-        if user_input != 0 and user_input != 1:
-            user_input = int(input('Please enter a 0 or a 1. 0=false 1=true:\n'))
-        else:
-            player_two_computer = bool(user_input)
-            break
-    # TODO: Implement computers
+    try:
+        user_input = int(input("Is player two a computer? 0=false 1=true (default=1):\n"))
+    except ValueError:
+        print("Invalid input. Defaulting to 1 (Computer).")
+        user_input = 1
+        
+    player_two_computer = bool(user_input)
+    
     player_one = Player(player_one_char, 0)
-    #player_two = Player(player_two_char, 1)
-    player_two = Computer(player_two_char, 1, computer_level)
+    if player_two_computer:
+        player_two = Computer(player_two_char, 1, computer_level)
+    else:
+        player_two = Player(player_two_char, 1)
     players = [player_one, player_two]
     board = Game(player_one, player_two)
-    #!TEMP
-    player_two.game = board
     
-    turn_player = 0
+    # TODO: Feels weird to give player_two the board after it was used to create the board.
+    if player_two_computer:
+        player_two.game = board
+    
+    
     while True:
         
         # Checks for win condition and handles result
+        match board.check_for_win():
+            case player_one:
+                print("Player 1 Won!")
+                break
+            
         win_player = board.check_for_win()
         if win_player == player_one:
-            print('Player 1 Won!')
+            print("Player 1 Won!")
             break
         elif win_player == player_two:
-            print('Player 2 Won!')
+            print("Player 2 Won!")
             break
         elif (board.board_one | board.board_two) == 0x1FF:
             print("Tie!")
@@ -62,13 +69,18 @@ if __name__ == '__main__':
         if isinstance(players[turn_player], Computer):
             move = players[turn_player].create_move()
             # TODO: Reverse parse?
-            print(f'Computer move is {move:#011b}:')
+            print(f"Computer move is {move:#011b}:")
         else:
             board.print_board()
-            move_raw = input(f'{players[turn_player]} Select your square: ')
+            move_raw = input(f"{players[turn_player]} Select your square: ")
             if move_raw in exit_options:
                 break
-            move = board.parse_input(move_raw)
+            try:
+                move = board.parse_input(move_raw)
+            except ValueError:
+                print("Invalid move. Please select an empty square.")
+                continue
+                
             
         board_status = board.move(move)
         if board_status == -1:
