@@ -52,7 +52,7 @@ class Computer(Player):
             self.eval_time = 0
             self.total_searches = 0
         
-        return move# << (self.game.board_bitlen * self.player_num)
+        return move
     
     def evaluate(self, board):
         if self.DEBUG:
@@ -77,13 +77,14 @@ class Computer(Player):
         best_score = -1000
         board = self.game._board_state
         moves = self.__get_available_moves(board)
+        shift = self.game.board_shift * (self.player_num - 1)
         
         # Iterates through the possible moves and calls
         # __minimax() to find the score of said move
         for i in range(9):
             # If move is available on both boards
             if (moves >> i) & 1:
-                guess_move = (1 << i) << self.game.board_bitlen
+                guess_move = (1 << i) << shift
                 
                 # Checks if move blocked other player win
                 # deals with depth limits by incentivising
@@ -140,7 +141,7 @@ class Computer(Player):
             for i in range(9):
                 # If move is available
                 if (moves >> i) & 1:
-                    guess_move = (1 << i) << self.game.board_bitlen
+                    guess_move = (1 << i) << self.game.board_shift
                     # Makes the move
                     board += guess_move
                     score = self.__minimax(board, depth + 1, False)
@@ -169,17 +170,20 @@ class Computer(Player):
                 
     def __get_available_moves(self, board: bytes) -> bytes:
         # Using old method of getting boards to allow for custom boards
-        board_one = board & self.game.board_one_mask
-        board_two = (board & self.game.board_two_mask) >> self.game.board_bitlen
-        return (~(board_one | board_two)) & self.game.board_one_mask
+        combined_boards = self.game.get_boards(board)
+        moves = (~(combined_boards)) & self.game.board_one_mask
+        
+        return moves
     
     def __create_random_move(self):
-        return 1 << random.randint(0, 8)
+        shift = self.game.board_shift * (self.player_num - 1)
+        move_rand = 1 << random.randint(0, 8)
+        return move_rand << shift
     
     def __did_move_block(self, board, move):
         # Checks if move blocked other player win
         # Does so by simulating if other player played said move
-        alt_board = board + (move >> self.game.board_bitlen)
+        alt_board = board + (move >> self.game.board_shift)
         
         # Checks if other player won
         if self.evaluate(alt_board) == -10:
