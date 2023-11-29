@@ -4,10 +4,7 @@
 ###############
 # MASTER TODO #
 ###############
-# TODO: Switch to one number for gamestate (both boards, winning player, active player, etc)
-# TODO: Document classes and modules
-# TODO: consolidate how we access and change data in regards to the game state
-
+# TODO: Split some of Game to other classes, a lot of it could go in Player honestly.
 
 # TODO: Do better directory stuff
 from game import Game
@@ -22,9 +19,14 @@ EXIT_OPTIONS = ['Quit', 'quit', 'q', 'Q', 'exit']
 DEFAULT_COMPUTER_LEVEL = 8
 turn_player = 0
 
-
+# Dang that's a long function name
 def get_player_two_computer_input() -> bool:
-    # Dang that's a long function name
+    """Asks user if player two should be a computer. Input validity is checked.
+
+    Returns:
+        bool: User's response. Defaults to True if input is invalid
+    """
+
     try:
         is_player_two_computer = bool(int(input('Is player two a computer? 0=false 1=true (default=1): ')))
     except ValueError:
@@ -33,7 +35,14 @@ def get_player_two_computer_input() -> bool:
     return is_player_two_computer
 
 def get_computer_level() -> int:
-    # Gets computer level then creates player_two
+    """Asks user what level should the computer be. Input validity is checked.
+    Input validation alerts the user when it fails and sets the level to a default.
+
+    Returns:
+        int: User's response. Defaults to 8 if input is invalid.
+                If input is out of range then it defaults to the nearest
+                number within expected range.
+    """
     try:
         level = int(input('Enter a computer level from 0-8 (0=easiest, 8=impossible, default=8): '))
         if level > 8:
@@ -68,8 +77,6 @@ if __name__ == '__main__':
     board = Game()
     
     while True:
-        
-        
         if isinstance(players[turn_player], Computer):
             move = players[turn_player].create_move(board)
             # TODO: Reverse parse?
@@ -87,7 +94,7 @@ if __name__ == '__main__':
                 
             
         board_status = board.move(move)
-        if board_status == -1:
+        if not board_status:
             print('Invalid move. Please select an empty square.')
             continue
         

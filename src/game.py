@@ -1,8 +1,6 @@
 """
-Contains Game class
+Contains Game class and constants used by the Game class.
 """
-
-from enum import Enum
 
 # My modules
 #from player import Player
@@ -27,13 +25,8 @@ NEITHER_PLAYER_WIN = 0
 TIE = 3
 
 class Game:
-    """
-    Contains all information on board state
-
-    BitBoard format:
-        bit 0-2: row 1
-        bit 3-5: row 2
-        bit 5-8: row 3
+    """Contains all information on board state
+    as well as methods handling state changes.
     """
 
     def __init__(self):
@@ -47,7 +40,7 @@ class Game:
         # 2nd and 3rd bit is who the current player is, 01 = player 1, 10 = player two, 11 = tie
         self.player_one_mask =       0b00100000000000000000000000000000
         self.player_two_mask =       0b01000000000000000000000000000000
-        self.player_mask =           0b01100000000000000000000000000000
+        self.players_mask =          0b01100000000000000000000000000000
         # Bits 24-32 represent board one (X), first 3 bits of that number is the top row
         #                                    second 3 bits is the middle row
         #                                    last 3 bits is the bottom row
@@ -73,6 +66,9 @@ class Game:
     
     @property
     def game_state(self) -> bool:
+        """Get or set game state bit
+        which indicates whether the game should continue.
+        """
         # Returns 1 if game is on still, 0 if game has a winner
         state = self._board_state & self._game_state_mask
         return bool(state >> self.game_state_shift)
@@ -85,8 +81,11 @@ class Game:
         
     @property
     def player(self) -> int:
+        """Get or set player bits. Player bits are binary representation of player num (1 or 2).
+        Setting the player bit takes in player num (1 or 2) and modifies the main bitboard accordingly.
+        """
         # Returns the player number (1 or 2)
-        player_bits = self._board_state & self.player_mask
+        player_bits = self._board_state & self.players_mask
         return player_bits >> self.player_shift
     
     @player.setter
@@ -94,48 +93,79 @@ class Game:
         # Sets the player bit
         
         # Effectively sets both player bits to 0 allowing for replacement
-        player_bits = self._board_state & ~self.player_mask
+        player_bits = self._board_state & ~self.players_mask
 
         # Shifts player bits to left and uses mask to trim extra bits
-        new_player = (player_num << self.player_shift) & self.player_mask
+        new_player = (player_num << self.player_shift) & self.players_mask
 
         self._board_state = player_bits | new_player
     
     @property
-    def board_one(self):
+    def board_one(self) -> int:
+        """Gets player one's board from the main bitboard."""
         return self.get_board_one(self._board_state)
         
-    
     @property
-    def board_two(self):
-        # Gets board two from board state
+    def board_two(self) -> int:
+        """Gets player two's board from the main bitboard."""
         return self.get_board_two(self._board_state)
         
     @property
-    def boards(self):
+    def boards(self) -> int:
+        """Gets player one and player two bits and ORs them together
+        into one 9 bit int representing every played move.
+        """
         return self.get_boards(self._board_state)
     
     def get_board_one(self, board: int) -> int:
+        """Gets player one's board from the bitboard.
+
+        Args:
+            board (int): Bitboard to extract bits from.
+
+        Returns:
+            int: Player one's move bits.
+        """
         return board & self.board_one_mask
     
     def get_board_two(self, board: int) -> int:
+        """Gets player two's board from the bitboard.
+
+        Args:
+            board (int): Bitboard to extract bits from.
+
+        Returns:
+            int: Player two's move bits.
+        """
         return (board & self.board_two_mask) >> self.board_shift
     
     def get_boards(self, board:int) -> int:
+        """Gets player one and player two bits and ORs them together
+        into one 9 bit int representing every played move.
+
+        Args:
+            board (int): Bitboard to extract bits from.
+
+        Returns:
+            int: Bits representing every played move.
+        """
         board_one = self.get_board_one(board)
         board_two = self.get_board_two(board)
         return board_one | board_two
         
     def parse_input(self, move: str, player_num : int = 1) -> int:
-        """
-        Parses user input (EX: 'a1') and converts it to a binary representation.
+        """Parses user input (EX: 'a1') and converts it to a binary representation.
 
         Args:
             move (str): Move input by player.
             player_num (int): Player number, 1 = player one, 2 = player two
 
+        Raises:
+            ValueError: Input is invalid (out of bounds).
+
         Returns:
             int: Binary representation of move (ex: 0b001000000)
+                    shifted to correct bitboard position.
         """
         
         move_row_raw: str = move[0]
@@ -168,16 +198,27 @@ class Game:
         
         return output_move << shift
     
-    def move(self, move: int) -> int:
+    def move(self, move: int) -> bool:
+        """
+        Modifies main board state to record a move from a player.
+
+        Args:
+            move (int): Bitboard of move, expects data
+                to be properly shifted based on the player number.
+
+        Returns:
+            bool: True if move was valid and successfully added.
+                        False if move was invalid.
+        """
         # TODO: Better status codes?
         # Returns -1 if move is not valid.
         if not self.is_move_valid(move):
-            return -1
+            return False
         
         self._board_state += move
         
         # Indicates success
-        return 1
+        return True
     
     def is_move_valid(self, move: int) -> bool:
         """
@@ -233,8 +274,7 @@ class Game:
         return NEITHER_PLAYER_WIN
     
     def is_winner(self) -> int:
-        """
-        Checks if there is a winner. Also modifies board state accordingly.
+        """Checks if there is a winner. Also modifies board state accordingly.
 
         Returns:
             int: Winning player. 0 = neither player, 3 = tie, or player number (1 or 2)
@@ -252,9 +292,8 @@ class Game:
         return winner
         
     def print_board(self):
-        """
-        Prints current board state in a human readable format.
-        Assumes that the board is 3x3.
+        """Prints main bitboard in a human readable format.
+        Assumes that the board is 3x3. Can only print class instanced bitboard.
         """
         
         # Padding
@@ -274,8 +313,7 @@ class Game:
     # Private Methods
     
     def __convert_from_bitboard(self) -> list[list[str]]:
-        """
-        Converts bitboard to nested array to make printing easier.
+        """Converts bitboard to nested array to make printing easier.
 
         Returns:
             list[list[str]]: Nested array representation of the board state.
@@ -303,8 +341,7 @@ class Game:
         return output_list
     
     def _get_player_bits(self, board: int, row: int) -> list[int]:
-        """
-        Creates a binary array from a row in a single board.
+        """Creates a binary array from a row in a single board.
 
         Args:
             board (int): Board to convert. Is not a full bitboard, just one board's bits.
@@ -344,7 +381,7 @@ if __name__ == '__main__':
     print('player two board ' + bin((board_test._board_state & board_test.board_two_mask) >> board_test.board_shift))
     #print(board_test.check_for_win(board_test._board_state))
     board_test.print_board()
-    
+
     board_test.game_state = False
     print(f'Game state: {board_test.game_state}')
     board_test.player = 1

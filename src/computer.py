@@ -6,10 +6,22 @@ from game import Game
 
 
 class Computer(Player):
+    """Type of player controlled by an algorithm instead of a human.
     
-    DEBUG = True
+    Attributes:
+        DEBUG (bool): True = verbose logging and timing.
+    """
+    
+    DEBUG: bool = True
     
     def __init__(self, player_char = 'O', player_num = 2, computer_level = 0):
+        """Initializes the instance with optional parameters.
+
+        Args:
+            player_char (str, optional): Character to be used when printing. Defaults to 'O'.
+            player_num (int, optional): Player ID number (1 or 2). Defaults to 2.
+            computer_level (int, optional): Computer level (0-8 inclusive). Defaults to 0.
+        """
         super().__init__(player_char, player_num)
         self.game: Game = None
         
@@ -24,7 +36,16 @@ class Computer(Player):
         self.total_searches = 0
         self.max_eval_time = 0
     
-    def create_move(self, current_game: Game) -> bytes:
+    def create_move(self, current_game: Game) -> int:
+        """Generates move on current game specified.
+        If computer_level = 0, the computer picks a random square to move.
+
+        Args:
+            current_game (Game): Game to generate a move on.
+
+        Returns:
+            int: Move bit, shifted to correct position and section of the bitboard.
+        """
         self.game = current_game
         if self.DEBUG:
             start = timer()
@@ -39,7 +60,7 @@ class Computer(Player):
             move = self.find_best_move()
         if self.DEBUG:
             end = timer()
-            #! Debugging to find what is slow
+            #! Debugging and timing information
             print('\nCOMPUTER DEBUGGING!')
             print(f'Time to find best move: {(end-start) * 1000:.4f}ms')
             print(f'Time spent evaluating: {self.eval_time * 1000:.4f}ms')
@@ -54,7 +75,19 @@ class Computer(Player):
         
         return move
     
-    def evaluate(self, board):
+    def evaluate(self, board: int) -> int:
+        """Evaluate player advantage in a bitboard.
+
+        Args:
+            board (int): Bitboard to evaluate.
+
+        Returns:
+            int: Evaluated score from ideal computer's view.
+                    10  = computer win\n
+                    -10 = computer loss\n
+                    0   = no win or loss
+        """
+
         if self.DEBUG:
             start = timer()
         winner = self.game.check_for_win(board)
@@ -71,7 +104,12 @@ class Computer(Player):
         else:
             return -10
     
-    def find_best_move(self) -> bytes:
+    def find_best_move(self) -> int:
+        """Finds best move in instance's specified game.
+
+        Returns:
+            int: Best move found, shifted to correct position and section of the bitboard.
+        """
         # TODO: Should probably clean this substantially
         best_move = 0
         best_score = -1000
@@ -106,7 +144,21 @@ class Computer(Player):
         
         return best_move
         
-    def __minimax(self, board, depth: int, is_max: bool):
+    def __minimax(self, board: int, depth: int, is_max: bool) -> int:
+        """Recusively finds the next best move for both players.
+        Depth is limited by depth_limit which somewhat simulates computer levels.
+
+        Args:
+            board (int): Bitboard to check.
+            depth (int): Current depth.
+            is_max (bool): Is maximizing(computer) player?
+
+        Returns:
+            int: Evaluation of checked tree branch.
+                    10  = computer win\n
+                    -10 = computer loss\n
+                    0   = no win or loss
+        """
         if self.DEBUG:
             self.total_searches += 1
             self.max_depth = max(depth, self.max_depth)
@@ -168,29 +220,57 @@ class Computer(Player):
             return best_score
             
                 
-    def __get_available_moves(self, board: bytes) -> bytes:
-        # Using old method of getting boards to allow for custom boards
+    def __get_available_moves(self, board: int) -> int:
+        """Gets available moves.
+        Does not evaluate each move, only shows what moves are available.
+
+        Args:
+            board (int): Board to find moves in.
+
+        Returns:
+            int: Bits of possible moves, looks like combined player bitboard.
+        """
         combined_boards = self.game.get_boards(board)
         moves = (~(combined_boards)) & self.game.board_one_mask
         
         return moves
     
-    def __create_random_move(self):
+    def __create_random_move(self) -> int:
+        """Generates a random move.
+        Does not check move validity.
+
+        Returns:
+            int: Randomly generated move.
+        """
         shift = self.game.board_shift * (self.player_num - 1)
         move_rand = 1 << random.randint(0, 8)
         return move_rand << shift
     
-    def __did_move_block(self, board, move):
-        # Checks if move blocked other player win
-        # Does so by simulating if other player played said move
-        alt_board = board + (move >> self.game.board_shift)
+    def __did_move_block(self, board: int, move: int) -> int:
+        """Checks if move prevents other player from winning.
+        Allows for computer to slightly incentivize blocking moves
+        when it reaches a depth limit instead of blindly picking a move.
+
+        Args:
+            board (int): Bitboard to check.
+            move (int): Move to simulate.
+
+        Returns:
+            int: Evaluation of position after move.
+                    5 = move does block a win\n
+                    -20 = move did not block a win
+        """
+        # Creates hypothetical board
+        if self.player_num == 1:
+            alt_board = board + (move << self.game.board_shift)
+        else:
+            alt_board = board + (move >> self.game.board_shift)
         
         # Checks if other player won
         if self.evaluate(alt_board) == -10:
             return 5
         
         # Chose -20 to hopefully prevent interference with other evals
-        #? Could remove?
         return -20
 
 if __name__ == '__main__':
