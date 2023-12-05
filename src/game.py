@@ -60,8 +60,6 @@ class Game:
         # Bit of game state, used to shift to the game state bits properly
         self.game_state_shift = 31
         
-        
-        
     # Public Methods
     
     @property
@@ -312,7 +310,7 @@ class Game:
     
     # Private Methods
     
-    def __convert_from_bitboard(self) -> list[list[str]]:
+    def __convert_from_bitboard(self):
         """Converts bitboard to nested array to make printing easier.
 
         Returns:
@@ -325,8 +323,8 @@ class Game:
         board_two = self.board_two
 
         for row_num, row in enumerate(output_list):
-            player_one_bits = self._get_player_bits(board_one, row_num)
-            player_two_bits = self._get_player_bits(board_two, row_num)
+            player_one_bits = self.__get_player_bits(board_one, row_num)
+            player_two_bits = self.__get_player_bits(board_two, row_num)
 
             # Adds player one char to row one where moves have been made
             for spot, bit in enumerate(player_one_bits):
@@ -340,7 +338,7 @@ class Game:
                     
         return output_list
     
-    def _get_player_bits(self, board: int, row: int) -> list[int]:
+    def __get_player_bits(self, board: int, row: int):
         """Creates a binary array from a row in a single board.
 
         Args:
@@ -366,35 +364,3 @@ class Game:
             bits.append(bit_in_position)
 
         return bits
-
-if __name__ == '__main__':
-    #! Temporary test code
-    board_test = Game()
-    #print(bin(board_test.board_state))
-    #board_test.move(board_test.parse_input('a1', 1))
-    #print(bin(board_test.board_state))
-    # self._board_state =     0b10100000000000001000000000000000
-    board_test.print_board()
-    print(bin(board_test.parse_input('c3')))
-    board_test._board_state = 0b1010000_101_001_110_1000000_010_110_001
-    print('player one board ' + bin(board_test._board_state & board_test.board_one_mask))
-    print('player two board ' + bin((board_test._board_state & board_test.board_two_mask) >> board_test.board_shift))
-    #print(board_test.check_for_win(board_test._board_state))
-    board_test.print_board()
-
-    board_test.game_state = False
-    print(f'Game state: {board_test.game_state}')
-    board_test.player = 1
-    print(f'Player num: {board_test.player}')
-    
-    #! Testing win conditions:
-    # WIN_CONDITIONS = [0b111, 0b111000, 0b111000000,
-    #                   0b100100100, 0b010010010, 0b001001001,
-    #                   0b100010001, 0b001010100]
-    # for win in range(len(WIN_CONDITIONS)):
-    #     board_test._board_state = WIN_CONDITIONS[win]
-    #     print(board_test.check_for_win())
-    
-    # board_test._board_state = 0b01100001000010111000000011110100
-    # board_test.print_board()
-    # print(board_test.check_for_win())

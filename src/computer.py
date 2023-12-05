@@ -1,8 +1,11 @@
+"""
+Contains Computer class
+"""
 import random
 from timeit import default_timer as timer
 
-from player import Player
-from game import Game
+from src.player import Player
+from src.game import Game
 
 
 class Computer(Player):
@@ -29,7 +32,7 @@ class Computer(Player):
         # 7 and 8 seem to be very similar, maybe if computer went first?
         self.depth_limit = computer_level
         
-        #! Debugging
+        #! Debugging setup
         self.hit_max_depth = False
         self.max_depth = 0
         self.eval_time = 0
@@ -272,21 +275,3 @@ class Computer(Player):
         
         # Chose -20 to hopefully prevent interference with other evals
         return -20
-
-if __name__ == '__main__':
-    #! Temporary test code
-    player_one_test = Player('X', 0)
-    player_two_test = Computer('O', 1, 7)
-    board_test = Game(player_one_test, player_two_test)
-    #player_two_test.game = board_test
-    board_test.board_one = 0b111010001
-    board_test.board_two = 0b000100010
-    board_test.board_state += (0x0 << 16) | (0x1)
-    #board_test.move(player_two_test, board_test.parse_input('a2'))
-    #board_test.move(player_two_test, board_test.parse_input('b2'))
-    #board_test.move(player_two_test, board_test.parse_input('c3'))
-    board_test.print_board()
-    ev = player_two_test.evaluate(board_test.board_state)
-    print(ev)
-    test = player_two_test.create_move(board_test)
-    print(bin(test >> 16))

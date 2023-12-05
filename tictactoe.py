@@ -1,15 +1,23 @@
+"""Tic-Tac-Toe Console Game
+
+I created this for my final project in COSC-1436.
+Gameplay is simple, simply call ./tictactoe.py and follow the instructions on screen.
+
+Unless I changed my mind, I probably submitted a single python script for ease of running.
+If that is the case, I highly recommend looking at the code in github since the combined files is over 800 lines of code.
+
+https://github.com/BouwerMan/TicTacToe
+
+It is the same code, just split into different modules for readability.
+
+I will note, I know I have over engineered this code. I got kind of carried away I guess.
+"""
 #https://numpydoc.readthedocs.io/en/latest/format.html#documenting-classes
 #https://google.github.io/styleguide/pyguide.html
 
-###############
-# MASTER TODO #
-###############
-# TODO: Split some of Game to other classes, a lot of it could go in Player honestly.
-
-# TODO: Do better directory stuff
-from game import Game
-from player import Player
-from computer import Computer
+from src.game import Game
+from src.player import Player
+from src.computer import Computer
 
 player_one = None
 player_two = None
@@ -79,8 +87,7 @@ if __name__ == '__main__':
     while True:
         if isinstance(players[turn_player], Computer):
             move = players[turn_player].create_move(board)
-            # TODO: Reverse parse?
-            print(f'Computer move is {(move):#030b}:')
+            print('Computer has generated it\'s move:')
         else:
             board.print_board()
             move_raw = input(f'{players[turn_player]} Select your square: ')
@@ -98,26 +105,22 @@ if __name__ == '__main__':
             print('Invalid move. Please select an empty square.')
             continue
         
+        # Checks for win condition and handles result
+        # Not using a switch statement here because zylabs is running python 3.8
+        winner = board.is_winner()
+        if winner == 1:
+            board.print_board() 
+            print('Player 1 Won!')
+            break
+        elif winner == 2:
+            board.print_board() 
+            print('Player 2 Won!')
+            break
+        elif winner == 3:
+            board.print_board() 
+            print('Tie!')
+            break
+
         # Incrementing player whose turn it is
         turn_player ^= 1
         board.player = turn_player + 1
-        
-        # Checks for win condition and handles result
-        match board.is_winner():
-            case 1:
-                board.print_board() 
-                print('Player 1 Won!')
-                break
-            case 2:
-                board.print_board() 
-                print('Player 2 Won!')
-                break
-            case 3:
-                board.print_board() 
-                print('Tie!')
-                break
-            case _:
-                pass
-    
-    output = format(board._board_state, '#034b')
-    print(output)
