@@ -2,9 +2,6 @@
 Contains Game class and constants used by the Game class.
 """
 
-# My modules
-#from player import Player
-
 # Constants
 DEFAULT_BOARD_LIST = [['a1','a2','a3'],['b1','b2','b3'],['c1','c2','c3']]
 BOARD_ROWS = 3
@@ -31,23 +28,24 @@ class Game:
 
     def __init__(self):
         # Default board state, bit details under mask section
-        # Bit 17 just separates board_one and board_two, always 1
+        # Bit 16 just separates board_one and board_two, always 1
         self._board_state =          0b10100000000000001000000000000000
 
         # Masks for state manipulation
-        # 1st bit is game state, 1=no winner, 0=winner/tie
-        self._game_state_mask =      0b10000000000000000000000000000000
-        # 2nd and 3rd bit is who the current player is, 01 = player 1, 10 = player two, 11 = tie
+        # 32nd bit is game state, 1=no winner, 0=winner/tie
+        self.game_state_mask =       0b10000000000000000000000000000000
+        # 30th and 31st bit is who the current player is, 0b01 = player 1, 0b10 = player two, 0b11 = tie
         self.player_one_mask =       0b00100000000000000000000000000000
         self.player_two_mask =       0b01000000000000000000000000000000
         self.players_mask =          0b01100000000000000000000000000000
-        # Bits 24-32 represent board one (X), first 3 bits of that number is the top row
+        # Bits 0-9 represent board one (X), first 3 bits of that number is the top row
         #                                    second 3 bits is the middle row
         #                                    last 3 bits is the bottom row
         self.board_one_mask =        0b00000000000000000000000111111111
-        # Bits 8-16 represent board two (O), bit order same as board one
+        # Bits 17-25 represent board two (O), bit order same as board one
         self.board_two_mask =        0b00000001111111110000000000000000
         
+        # Just a mask for both boards, allowing for selection of only the move bits. 
                                    # 0b00000001111111110000000111111111
         self.boards_mask = self.board_one_mask | self.board_two_mask
         
@@ -68,7 +66,7 @@ class Game:
         which indicates whether the game should continue.
         """
         # Returns 1 if game is on still, 0 if game has a winner
-        state = self._board_state & self._game_state_mask
+        state = self._board_state & self.game_state_mask
         return bool(state >> self.game_state_shift)
     
     @game_state.setter

@@ -21,8 +21,6 @@ from src.computer import Computer
 
 player_one = None
 player_two = None
-player_one_char = 'X'
-player_two_char = 'O'
 EXIT_OPTIONS = ['Quit', 'quit', 'q', 'Q', 'exit']
 DEFAULT_COMPUTER_LEVEL = 8
 turn_player = 0
@@ -73,13 +71,13 @@ def get_computer_level() -> int:
 
 if __name__ == '__main__':
 
-    player_one = Player(player_one_char, 1)
+    player_one = Player(1)
     
     if get_player_two_computer_input():    
         computer_level = get_computer_level()
-        player_two = Computer(player_two_char, 2, computer_level)
+        player_two = Computer(2, computer_level)
     else:
-        player_two = Player(player_two_char, 2)
+        player_two = Player(2)
         
     players = [player_one, player_two]
     board = Game()

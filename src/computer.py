@@ -17,15 +17,14 @@ class Computer(Player):
     
     DEBUG: bool = True
     
-    def __init__(self, player_char = 'O', player_num = 2, computer_level = 0):
+    def __init__(self, player_num = 2, computer_level = 0):
         """Initializes the instance with optional parameters.
 
         Args:
-            player_char (str, optional): Character to be used when printing. Defaults to 'O'.
             player_num (int, optional): Player ID number (1 or 2). Defaults to 2.
             computer_level (int, optional): Computer level (0-8 inclusive). Defaults to 0.
         """
-        super().__init__(player_char, player_num)
+        super().__init__(player_num)
         self.game: Game = None
         
         # Can be 0-8 (0 being easiest, 8 being impossible)
