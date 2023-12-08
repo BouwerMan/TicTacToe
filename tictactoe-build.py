@@ -1,6 +1,23 @@
+"""Tic-Tac-Toe Console Game
+
+I created this for my final project in COSC-1436.
+Gameplay is simple, simply call ./tictactoe.py and follow the instructions on screen.
+
+Unless I changed my mind, I probably submitted a single python script for ease of running.
+If that is the case, I highly recommend looking at the code in github since the combined files is over 800 lines of code.
+
+https://github.com/BouwerMan/TicTacToe
+
+It is the same code, just split into different modules for readability.
+
+I will note, I know I have over engineered this code. I got kind of carried away I guess.
+"""
+
 import random
 from timeit import default_timer as timer
 
+
+# Some intial variables and constants used by main function (at the bottom)
 player_one = None
 player_two = None
 EXIT_OPTIONS = ['Quit', 'quit', 'q', 'Q', 'exit']
@@ -409,7 +426,7 @@ class Computer(Player):
         DEBUG (bool): True = verbose logging and timing.
     """
     
-    DEBUG: bool = True
+    DEBUG: bool = False
     
     def __init__(self, player_num = 2, computer_level = 0):
         """Initializes the instance with optional parameters.

@@ -15,7 +15,7 @@ class Computer(Player):
         DEBUG (bool): True = verbose logging and timing.
     """
     
-    DEBUG: bool = True
+    DEBUG: bool = False
     
     def __init__(self, player_num = 2, computer_level = 0):
         """Initializes the instance with optional parameters.
